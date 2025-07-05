@@ -1,38 +1,49 @@
 const express = require('express');
+const { PrismaClient } = require('@prisma/client');
+
 const app = express();
+const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
 console.log('🚀 Miles Deal API iniciando...');
 
 app.use(express.json());
 
-// Health check para Easypanel
-app.get('/health', (req, res) => {
-  console.log('Health check acessado');
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    message: 'API funcionando!',
-    uptime: process.uptime()
-  });
+// Health check
+app.get('/health', async (req, res) => {
+  try {
+    await prisma.$connect();
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      database: 'connected'
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      database: 'disconnected',
+      error: error.message
+    });
+  }
 });
 
-// Health check alternativo
-app.get('/healthz', (req, res) => {
-  res.status(200).send('OK');
-});
-
-// Rota de teste
-app.get('/test', (req, res) => {
-  res.json({
-    message: 'API está funcionando!',
-    timestamp: new Date().toISOString()
-  });
+// Melhores ofertas
+app.get('/api/deals/best', async (req, res) => {
+  try {
+    const deals = await prisma.flight.findMany({
+      orderBy: { dealScore: 'desc' },
+      take: 20
+    });
+    res.json(deals);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('🔴 Recebido SIGTERM, fazendo shutdown graceful...');
+  console.log('🔴 Shutdown graceful...');
+  prisma.$disconnect();
   process.exit(0);
 });
 
