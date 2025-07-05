@@ -3,28 +3,25 @@ const { Client } = require('pg');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// LOG ÚNICO PARA IDENTIFICAR SE O CÓDIGO NOVO ESTÁ RODANDO
+console.log('🔥🔥🔥 CÓDIGO NOVO CARREGADO - TIMESTAMP:', new Date().toISOString());
+console.log('🔥🔥🔥 ESTE É O CÓDIGO COM BANCO DE DADOS!');
+console.log('🔥🔥🔥 SE VOCÊ VÊ ISSO, O CÓDIGO NOVO ESTÁ FUNCIONANDO!');
+
 console.log('🚀 MILES DEAL API - VERSÃO COM BANCO');
 
 app.use(express.json());
 
-// HEALTH - API INFO E MENU PRINCIPAL
+// HEALTH com identificação única
 app.get('/health', (req, res) => {
-  console.log('✅ Health/Menu executado');
+  console.log('✅ NOVO Health/Menu executado');
   res.status(200).json({
-    message: 'Miles Deal API',
-    version: '1.0.0',
+    message: 'Miles Deal API - CÓDIGO NOVO FUNCIONANDO!',
+    version: '2.0.0',
     status: 'running',
     timestamp: new Date().toISOString(),
     database: process.env.DATABASE_URL ? 'configured' : 'not_configured',
-    menu: {
-      api_info: 'GET /health',
-      main_functions: 'GET /test',
-      setup_database: 'GET /test?action=setup',
-      create_database: 'GET /test?action=database',
-      list_flights: 'GET /test?action=flights',
-      add_flight: 'POST /test (with flight data)'
-    },
-    usage: 'Use /test com parâmetros ?action= para diferentes funções'
+    unique_id: 'NOVO_CODIGO_' + Date.now()
   });
 });
 
