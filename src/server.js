@@ -47,6 +47,39 @@ app.get('/test', (req, res) => {
   });
 });
 
+// Rotas de teste para verificar roteamento
+app.get('/health/test', (req, res) => {
+  console.log('✅ /health/test executado');
+  res.json({ 
+    message: 'Health test funcionando!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/test/debug', (req, res) => {
+  console.log('✅ /test/debug executado');
+  res.json({ 
+    message: 'Test debug funcionando!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api', (req, res) => {
+  console.log('✅ /api executado');
+  res.json({ 
+    message: 'API root funcionando!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  console.log('✅ /api/health executado');
+  res.json({ 
+    message: 'API health funcionando!',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Rota raiz
 app.get('/', (req, res) => {
   console.log('✅ Rota raiz executada');
@@ -57,6 +90,15 @@ app.get('/', (req, res) => {
     headers: req.headers,
     url: req.url,
     method: req.method
+  });
+});
+
+// Setup
+app.get('/setup', (req, res) => {
+  console.log('✅ Setup executado');
+  res.json({
+    message: 'Setup funcionando!',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -82,6 +124,15 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
   console.log(`🚀 SERVER INICIADO NA PORTA ${PORT}`);
   console.log('📊 Escutando em 0.0.0.0:3000');
+  console.log('📊 Rotas de teste disponíveis:');
+  console.log('  - GET /health');
+  console.log('  - GET /test');
+  console.log('  - GET /health/test');
+  console.log('  - GET /test/debug');
+  console.log('  - GET /api');
+  console.log('  - GET /api/health');
+  console.log('  - GET /');
+  console.log('  - GET /setup');
   console.log('=================================');
 });
 
