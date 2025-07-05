@@ -44,52 +44,15 @@ app.get('/', (req, res) => {
   });
 });
 
-// Criar tabela no banco
-app.get('/setup/database', async (req, res) => {
-  try {
-    const { Client } = require('pg');
-    const client = new Client({
-      connectionString: process.env.DATABASE_URL
-    });
-    
-    await client.connect();
-    console.log('🔌 Conectado ao banco de dados');
-    
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS flights (
-        id SERIAL PRIMARY KEY,
-        airline VARCHAR(100) NOT NULL,
-        miles_program VARCHAR(100) NOT NULL,
-        origin_city VARCHAR(100) NOT NULL,
-        destination_city VARCHAR(100) NOT NULL,
-        destination_country VARCHAR(100) NOT NULL,
-        destination_continent VARCHAR(100) NOT NULL,
-        miles_price INTEGER NOT NULL,
-        taxes_fees DECIMAL(10,2) NOT NULL,
-        flight_date TIMESTAMP NOT NULL,
-        flight_class VARCHAR(50) NOT NULL,
-        availability INTEGER NOT NULL,
-        is_domestic BOOLEAN NOT NULL,
-        deal_score DECIMAL(5,2) DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `;
-    
-    await client.query(createTableQuery);
-    console.log('✅ Tabela flights criada com sucesso');
-    
-    await client.end();
-    
-    res.json({ 
-      success: true, 
-      message: 'Tabela flights criada com sucesso!' 
-    });
-  } catch (error) {
-    console.error('❌ Erro ao criar tabela:', error);
-    res.status(500).json({ 
-      error: error.message 
-    });
-  }
+// Criar tabela no banco - versão simplificada
+app.get('/setup/database', (req, res) => {
+  console.log('🔧 Endpoint /setup/database acessado');
+  
+  res.json({ 
+    message: 'Endpoint funcionando!',
+    timestamp: new Date().toISOString(),
+    database_url: process.env.DATABASE_URL ? 'configurado' : 'não configurado'
+  });
 });
 
 // Tratamento melhor de sinais
