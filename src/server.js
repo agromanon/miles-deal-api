@@ -12,9 +12,13 @@ console.log('🔧 Processo PID:', process.pid);
 
 app.use(express.json());
 
-// Log de todas as rotas registradas
+// Log TODAS as requisições
 app.use((req, res, next) => {
-  console.log(`📡 ${req.method} ${req.url} - ${new Date().toISOString()}`);
+  console.log(`📡 REQUEST: ${req.method} ${req.url}`);
+  console.log(`📡 HEADERS:`, req.headers);
+  console.log(`📡 IP:`, req.ip);
+  res.header('X-Debug-Server', 'Miles-Deal-API');
+  res.header('X-Debug-Time', new Date().toISOString());
   next();
 });
 
@@ -24,7 +28,10 @@ app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    message: 'API funcionando!'
+    message: 'API funcionando!',
+    headers: req.headers,
+    url: req.url,
+    method: req.method
   });
 });
 
@@ -33,7 +40,10 @@ app.get('/test', (req, res) => {
   console.log('✅ Test executado');
   res.json({
     message: 'API está funcionando!',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    headers: req.headers,
+    url: req.url,
+    method: req.method
   });
 });
 
@@ -44,48 +54,21 @@ app.get('/', (req, res) => {
     message: 'Miles Deal API - DEBUG VERSION',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
-    pid: process.pid
+    headers: req.headers,
+    url: req.url,
+    method: req.method
   });
 });
 
-// Setup
-app.get('/setup', (req, res) => {
-  console.log('✅ Setup executado');
-  res.json({
-    message: 'Setup funcionando!',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Teste interno - listar todas as rotas
-app.get('/debug/routes', (req, res) => {
-  console.log('✅ Debug routes executado');
-  
-  const routes = [];
-  app._router.stack.forEach((middleware) => {
-    if (middleware.route) {
-      routes.push({
-        method: Object.keys(middleware.route.methods)[0].toUpperCase(),
-        path: middleware.route.path
-      });
-    }
-  });
-  
-  res.json({
-    message: 'Rotas registradas no Express',
-    routes: routes,
-    timestamp: new Date().toISOString(),
-    total: routes.length
-  });
-});
-
-// Middleware para rotas não encontradas
+// Capturar TODAS as requisições
 app.use('*', (req, res) => {
-  console.log(`❌ Rota não encontrada: ${req.method} ${req.originalUrl}`);
+  console.log(`🔍 CATCH ALL: ${req.method} ${req.originalUrl}`);
+  console.log(`🔍 HEADERS:`, req.headers);
   res.status(404).json({
     error: 'Rota não encontrada',
     method: req.method,
     url: req.originalUrl,
+    headers: req.headers,
     timestamp: new Date().toISOString()
   });
 });
@@ -98,12 +81,7 @@ process.on('SIGTERM', () => {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
   console.log(`🚀 SERVER INICIADO NA PORTA ${PORT}`);
-  console.log('📊 Rotas disponíveis:');
-  console.log('  - GET /health');
-  console.log('  - GET /test');
-  console.log('  - GET /');
-  console.log('  - GET /setup');
-  console.log('  - GET /debug/routes');
+  console.log('📊 Escutando em 0.0.0.0:3000');
   console.log('=================================');
 });
 
