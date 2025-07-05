@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Flight {
+  id                   String   @id @default(cuid())
+  airline              String
+  milesProgram         String   @map("miles_program")
+  originCity           String   @map("origin_city")
+  destinationCity      String   @map("destination_city")
+  destinationCountry   String   @map("destination_country")
+  destinationContinent String   @map("destination_continent")
+  milesPrice           Int      @map("miles_price")
+  taxesFees            Float    @map("taxes_fees")
+  flightDate           DateTime @map("flight_date")
+  returnDate           DateTime? @map("return_date")
+  flightClass          String   @map("flight_class")
+  availability         Int
+  isDomestic           Boolean  @map("is_domestic")
+  dealScore            Float    @map("deal_score")
+  scrapedAt            DateTime @default(now()) @map("scraped_at")
+  
+  @@index([destinationContinent])
+  @@index([destinationCountry])
+  @@index([dealScore])
+  @@index([isDomestic])
+  @@index([scrapedAt])
+  @@map("flights")
+}
+
+model Destination {
+  id                    String  @id @default(cuid())
+  city                  String  @unique
+  country               String
+  continent             String
+  isHub                 Boolean @default(false) @map("is_hub")
+  avgMilesDomestic      Int?    @map("avg_miles_domestic")
+  avgMilesInternational Int?    @map("avg_miles_international")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  @@index([continent])
+  @@index([country])
+  @@map("destinations")
+}
+
+model Alert {
+  id           String   @id @default(cuid())
+  userEmail    String   @map("user_email")
+  continent    String?
+  country      String?
+  maxMiles     Int?     @map("max_miles")
+  maxTaxes     Float?   @map("max_taxes")
+  minDealScore Float?   @map("min_deal_score")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  
+  @@index([userEmail])
+  @@index([isActive])
+  @@map("alerts")
+}
+
+model ScrapingLog {
+  id            String   @id @default(cuid())
+  airline       String
+  status        String
+  message       String?
+  flightsFound  Int      @default(0) @map("flights_found")
+  executionTime Int      @map("execution_time")
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  @@index([airline])
+  @@index([status])
+  @@index([createdAt])
+  @@map("scraping_logs")
+}
