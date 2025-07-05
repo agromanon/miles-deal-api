@@ -57,6 +57,28 @@ app.get('/setup', (req, res) => {
   });
 });
 
+// Teste interno - listar todas as rotas
+app.get('/debug/routes', (req, res) => {
+  console.log('✅ Debug routes executado');
+  
+  const routes = [];
+  app._router.stack.forEach((middleware) => {
+    if (middleware.route) {
+      routes.push({
+        method: Object.keys(middleware.route.methods)[0].toUpperCase(),
+        path: middleware.route.path
+      });
+    }
+  });
+  
+  res.json({
+    message: 'Rotas registradas no Express',
+    routes: routes,
+    timestamp: new Date().toISOString(),
+    total: routes.length
+  });
+});
+
 // Middleware para rotas não encontradas
 app.use('*', (req, res) => {
   console.log(`❌ Rota não encontrada: ${req.method} ${req.originalUrl}`);
@@ -81,6 +103,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('  - GET /test');
   console.log('  - GET /');
   console.log('  - GET /setup');
+  console.log('  - GET /debug/routes');
   console.log('=================================');
 });
 
