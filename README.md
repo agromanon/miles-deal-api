@@ -18,48 +18,27 @@ API para encontrar as melhores ofertas de passagens aéreas com milhas.
 
 **🔧 Integração com n8n**
 
-**json**
-
-Copiar![](Aspose.Words.0202112f-dbb9-448b-a669-ae85055d36a2.001.png)
-
+```json
 POST /api/deals/bulk
-
 {
-
-`  `"flights": [
-
-`    `{
-
-`      `"airline": "LATAM",
-
-`      `"milesProgram": "LATAM Pass",
-
-`      `"originCity": "São Paulo",
-
-`      `"destinationCity": "Madrid",
-
-`      `"destinationCountry": "Espanha",
-
-`      `"destinationContinent": "Europa",
-
-`      `"milesPrice": 35000,
-
-`      `"taxesFees": 280.50,
-
-`      `"flightDate": "2024-06-15T10:00:00Z",
-
-`      `"flightClass": "economy",
-
-`      `"availability": 5,
-
-`      `"isDomestic": false
-
-`    `}
-
-`  `]
-
+  "flights": [
+    {
+      "airline": "LATAM",
+      "milesProgram": "LATAM Pass",
+      "originCity": "São Paulo",
+      "destinationCity": "Madrid",
+      "destinationCountry": "Espanha",
+      "destinationContinent": "Europa",
+      "milesPrice": 35000,
+      "taxesFees": 280.50,
+      "flightDate": "2024-06-15T10:00:00Z",
+      "flightClass": "economy",
+      "availability": 5,
+      "isDomestic": false
+    }
+  ]
 }
-
+```
 **📊 Sistema de Pontuação**
 
 Avalia ofertas de 0-100 baseado em:
