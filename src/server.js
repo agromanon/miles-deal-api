@@ -1,116 +1,63 @@
 const express = require('express');
 const app = express();
+const PORT = 3000;
 
-// DESABILITAR ETAG
-app.disable('etag');
+console.log('🚀 DIAGNÓSTICO - INICIANDO SERVIDOR');
+console.log('📍 PORT:', PORT);
+console.log('📍 ENV PORT:', process.env.PORT);
 
-const PORT = process.env.PORT || 3000;
-
-console.log('🚀 MILES DEAL API - VERSÃO ULTRA SIMPLES');
-console.log('📊 DATABASE_URL:', process.env.DATABASE_URL ? 'CONFIGURADO' : 'NÃO CONFIGURADO');
-
-app.use(express.json());
-
-// Middleware anti-cache
+// Middleware super simples
 app.use((req, res, next) => {
-  res.set({
-    'Cache-Control': 'no-store, no-cache, must-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0'
-  });
-  console.log(`📡 ${req.method} ${req.url} - ${new Date().toISOString()}`);
+  console.log(`🔥 ${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('🔥 Headers:', req.headers);
+  console.log('🔥 IP:', req.ip);
   next();
 });
 
-// ROTA RAIZ
+// Rota raiz
 app.get('/', (req, res) => {
-  console.log('✅ HOME executada');
-  res.json({
-    message: 'Miles Deal API - Ultra Simple Version',
-    version: '1.0.0',
+  console.log('✅ EXECUTANDO ROTA /');
+  const response = {
+    message: 'DIAGNÓSTICO FUNCIONANDO',
     timestamp: new Date().toISOString(),
-    database: process.env.DATABASE_URL ? 'configured' : 'not_configured',
-    status: 'working'
-  });
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    ip: req.ip
+  };
+  console.log('✅ RESPOSTA:', response);
+  res.json(response);
 });
 
-// HEALTH
-app.get('/health', (req, res) => {
-  console.log('✅ HEALTH executada');
+// Rota de teste
+app.get('/test', (req, res) => {
+  console.log('✅ EXECUTANDO ROTA /test');
   res.json({
-    status: 'ok',
+    message: 'TESTE FUNCIONANDO',
     timestamp: new Date().toISOString(),
-    message: 'API funcionando!',
-    database: process.env.DATABASE_URL ? 'configured' : 'not_configured'
+    random: Math.random()
   });
 });
 
-// SETUP - SEM BANCO POR ENQUANTO
-app.get('/setup', (req, res) => {
-  console.log('✅ SETUP executada');
-  res.json({
-    success: true,
-    message: 'Setup endpoint working - database operations disabled for now',
-    timestamp: new Date().toISOString(),
-    database: process.env.DATABASE_URL ? 'configured' : 'not_configured'
-  });
-});
-
-// FLIGHTS - SEM BANCO POR ENQUANTO
-app.get('/flights', (req, res) => {
-  console.log('✅ FLIGHTS executada');
-  res.json({
-    success: true,
-    message: 'Flights endpoint working - database operations disabled for now',
-    timestamp: new Date().toISOString(),
-    total_flights: 0,
-    flights: []
-  });
-});
-
-// SEARCH
-app.get('/search', (req, res) => {
-  console.log('✅ SEARCH executada');
-  res.json({
-    success: true,
-    message: 'Search endpoint working',
-    timestamp: new Date().toISOString(),
-    query: req.query
-  });
-});
-
-// Tratamento de erros
-app.use((error, req, res, next) => {
-  console.error('❌ ERRO:', error);
-  res.status(500).json({
-    success: false,
-    error: error.message,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Capturar erros
-process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection:', reason);
-});
-
-// Ignorar SIGTERM
-process.on('SIGTERM', () => {
-  console.log('🔴 SIGTERM ignorado');
-});
-
+// Iniciar servidor
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
-  console.log(`🚀 SERVIDOR RODANDO NA PORTA ${PORT}`);
-  console.log('📝 ROTAS DISPONÍVEIS:');
-  console.log('  - GET / (home)');
-  console.log('  - GET /health (status)');
-  console.log('  - GET /setup (setup)');
-  console.log('  - GET /flights (flights)');
-  console.log('  - GET /search (search)');
+  console.log(`🚀 SERVIDOR ESCUTANDO NA PORTA ${PORT}`);
+  console.log('🌐 HOST: 0.0.0.0 (todas as interfaces)');
+  console.log('📡 Endereço completo: http://0.0.0.0:3000');
   console.log('=================================');
+});
+
+// Verificar se realmente está escutando
+server.on('listening', () => {
+  const address = server.address();
+  console.log('✅ SERVIDOR CONFIRMADO ESCUTANDO:');
+  console.log('   - Address:', address.address);
+  console.log('   - Port:', address.port);
+  console.log('   - Family:', address.family);
+});
+
+// Logs de erro
+server.on('error', (error) => {
+  console.error('❌ ERRO NO SERVIDOR:', error);
 });
