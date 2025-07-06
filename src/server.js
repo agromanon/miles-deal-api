@@ -4,6 +4,9 @@ const PORT = process.env.PORT || 3001;
 
 console.log('🚀 MILES DEAL API - FRESH START');
 console.log('📍 PORT:', PORT);
+console.log('📍 DATABASE_URL:', process.env.DATABASE_URL ? 'CONFIGURADO' : 'NÃO CONFIGURADO');
+
+app.use(express.json());
 
 app.get('/', (req, res) => {
   res.json({
@@ -11,7 +14,8 @@ app.get('/', (req, res) => {
     version: '1.0',
     timestamp: new Date().toISOString(),
     status: 'SUCCESS',
-    port: PORT
+    port: PORT,
+    database: process.env.DATABASE_URL ? 'CONECTADO' : 'NÃO CONECTADO'
   });
 });
 
@@ -19,10 +23,13 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     version: '1.0',
-    port: PORT 
+    port: PORT,
+    database: process.env.DATABASE_URL ? 'OK' : 'ERRO'
   });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log('✅ Database configurado:', process.env.DATABASE_URL ? 'SIM' : 'NÃO');
 });
+
