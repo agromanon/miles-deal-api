@@ -28,8 +28,16 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log('✅ Database configurado:', process.env.DATABASE_URL ? 'SIM' : 'NÃO');
 });
 
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('🔴 SIGTERM recebido - encerrando graciosamente');
+  server.close(() => {
+    console.log('🔴 Servidor encerrado');
+    process.exit(0);
+  });
+});
