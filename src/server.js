@@ -1,10 +1,10 @@
 const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080; // Porta padrão containers
 
 console.log('🚀 MILES DEAL API - FRESH START');
 console.log('📍 PORT:', PORT);
-console.log('📍 DATABASE_URL:', process.env.DATABASE_URL ? 'CONFIGURADO' : 'NÃO CONFIGURADO');
+console.log('📍 ENV PORT:', process.env.PORT);
 
 app.use(express.json());
 
@@ -15,6 +15,7 @@ app.get('/', (req, res) => {
     timestamp: new Date().toISOString(),
     status: 'SUCCESS',
     port: PORT,
+    env_port: process.env.PORT,
     database: process.env.DATABASE_URL ? 'CONECTADO' : 'NÃO CONECTADO'
   });
 });
@@ -23,16 +24,11 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     version: '1.0',
-    port: PORT,
-    database: process.env.DATABASE_URL ? 'OK' : 'ERRO'
+    port: PORT
   });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log('✅ Database configurado:', process.env.DATABASE_URL ? 'SIM' : 'NÃO');
-  console.log('✅ Servidor estável - sem graceful shutdown');
+  console.log('✅ Host: 0.0.0.0 - todas as interfaces');
 });
-
-// REMOVER GRACEFUL SHUTDOWN TEMPORARIAMENTE
-console.log('⚠️ Graceful shutdown desabilitado para teste');
