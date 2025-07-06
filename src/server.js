@@ -77,6 +77,7 @@ app.post('/api/flights/bulk', async (req, res) => {
 
 // Endpoint de Health Check
 app.get(HEALTHCHECK_ENDPOINT, async (req, res) => {
+    console.log('✅ HEALTH CHECK RECEBIDO (Endpoint /health)!'); // Log para confirmar que a rota foi atingida
     try {
         // Tenta fazer uma query simples no banco de dados para verificar a conexão
         await prisma.$queryRaw`SELECT 1`;
@@ -108,10 +109,10 @@ app.use((err, req, res, next) => {
 });
 
 // Inicia o servidor
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log('🚀 MILES DEAL API - FRESH START');
     console.log(`📍 PORT: ${PORT}`);
-    console.log(`📍 ENV PORT: ${process.env.PORT ? 'Definida' : 'Não definida (usando padrão)'}`);
+    console.log(`📍 ENV PORT: ${process.env.PORT ? process.env.PORT : 'Não definida (usando padrão)'}`); // Ajustado para mostrar o valor da porta se definida
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`--- Servidor pronto para receber requisições ---`);
 });
