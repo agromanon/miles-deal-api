@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000; // ← PORTA 3000
 
 console.log('🚀 MILES DEAL API - FRESH START');
 console.log('📍 PORT:', PORT);
@@ -8,7 +8,7 @@ console.log('📍 ENV PORT:', process.env.PORT);
 
 app.use(express.json());
 
-// HEALTH CHECKS MÚLTIPLOS
+// HEALTH CHECKS ROBUSTOS
 app.get('/health', (req, res) => {
   console.log('🔍 Health check acessado');
   res.status(200).json({ 
@@ -16,7 +16,8 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     version: '1.0',
     port: PORT,
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    pid: process.pid
   });
 });
 
@@ -39,12 +40,30 @@ app.get('/', (req, res) => {
     status: 'SUCCESS',
     port: PORT,
     env_port: process.env.PORT,
-    database: process.env.DATABASE_URL ? 'CONECTADO' : 'NÃO CONECTADO'
+    pid: process.pid,
+    uptime: process.uptime()
   });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log('✅ Host: 0.0.0.0 - todas as interfaces');
-  console.log('✅ Health checks: /health, /healthz, /ping');
+  console.log('✅ PID:', process.pid);
+});
+
+// TRATAMENTO DE SINAIS
+process.on('SIGTERM', () => {
+  console.log('🔄 SIGTERM recebido - fechando servidor graciosamente');
+  server.close(() => {
+    console.log('✅ Servidor fechado');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('🔄 SIGINT recebido - fechando servidor');
+  server.close(() => {
+    console.log('✅ Servidor fechado');
+    process.exit(0);
+  });
 });
