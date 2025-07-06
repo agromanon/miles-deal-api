@@ -1,123 +1,136 @@
+// src/server.js
+
+// 1. Carrega as variáveis de ambiente do arquivo .env
+//    Isso é crucial para que process.env.PORT e process.env.DATABASE_URL funcionem.
+require('dotenv').config();
+
 const express = require('express');
+const { PrismaClient } = require('@prisma/client');
+const cors = require('cors'); // Importa o pacote cors
+
 const app = express();
+const prisma = new PrismaClient();
 
-// Define a porta do servidor. Prioriza a variável de ambiente PORT, caso contrário, usa 4000.
-const PORT = process.env.PORT || 4000;
+// Configurações do servidor
+const PORT = process.env.PORT || 3000; // Usa a porta do ambiente ou 3000 como padrão
+const HEALTHCHECK_ENDPOINT = process.env.HEALTHCHECK_ENDPOINT || '/health';
 
-// Middleware para logar todas as requisições recebidas
-app.use((req, res, next) => {
-  console.log(`📥 Requisição recebida: ${req.method} ${req.url} de ${req.ip}`);
-  next(); // Continua para a próxima rota ou middleware
+// Middleware
+app.use(express.json({ limit: '50mb' })); // Aumenta o limite para JSON para dados de bulk
+app.use(cors()); // Habilita CORS para todas as rotas
+
+// Função para calcular o dealScore
+const calculateDealScore = (flight) => {
+    // Implemente sua lógica de cálculo de dealScore aqui
+    // Exemplo simplificado:
+    const baseScore = 100;
+    const priceFactor = flight.price / 1000; // Quanto menor o preço, maior o score
+    const milesFactor = flight.miles / 10000; // Quanto menor as milhas, maior o score
+    const durationFactor = flight.durationHours / 24; // Quanto menor a duração, maior o score
+
+    // Adapte esta fórmula à sua estratégia de negócio
+    return Math.max(0, baseScore - (priceFactor * 10) - (milesFactor * 5) - (durationFactor * 2));
+};
+
+// Endpoint para receber dados em massa do n8n
+app.post('/api/flights/bulk', async (req, res) => {
+    try {
+        const flightsData = req.body;
+
+        if (!Array.isArray(flightsData) || flightsData.length === 0) {
+            return res.status(400).json({ error: 'O corpo da requisição deve ser um array de dados de voo não vazio.' });
+        }
+
+        const flightsToCreate = flightsData.map(flight => ({
+            origin: flight.origin,
+            destination: flight.destination,
+            departureDate: new Date(flight.departureDate),
+            returnDate: flight.returnDate ? new Date(flight.returnDate) : null,
+            price: parseFloat(flight.price),
+            miles: parseInt(flight.miles, 10),
+            airline: flight.airline,
+            link: flight.link,
+            durationHours: parseFloat(flight.durationHours),
+            stops: parseInt(flight.stops, 10),
+            cabinClass: flight.cabinClass || 'ECONOMY', // Default se não for fornecido
+            dealScore: calculateDealScore(flight), // Calcula o dealScore
+            scrapedAt: new Date(),
+        }));
+
+        // Limpa a tabela antes de inserir novos dados (opcional, dependendo da sua estratégia)
+        // await prisma.flight.deleteMany({});
+        // console.log('Dados de voo existentes deletados.');
+
+        const result = await prisma.flight.createMany({
+            data: flightsToCreate,
+            skipDuplicates: true, // Opcional: ignora duplicatas se houver chaves únicas
+        });
+
+        console.log(`Recebidos e processados ${flightsData.length} voos. Inseridos: ${result.count}`);
+        res.status(200).json({ message: 'Dados de voo recebidos e processados com sucesso!', count: result.count });
+
+    } catch (error) {
+        console.error('Erro ao processar dados de voo:', error);
+        res.status(500).json({ error: 'Erro interno do servidor ao processar dados de voo.' });
+    }
 });
 
 // Endpoint de Health Check
-// Este endpoint é crucial para o EasyPanel/Traefik verificar a saúde da aplicação.
-// Deve ser o mais leve e rápido possível.
-app.get('/health', (req, res) => {
-  console.log('✅ HEALTH CHECK RECEBIDO (Endpoint /health)!');
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    message: 'Miles Deal API is healthy and running!',
-    port: PORT,
-    pid: process.pid,
-    uptime: process.uptime() // Tempo que o processo está rodando em segundos
-  });
+app.get(HEALTHCHECK_ENDPOINT, async (req, res) => {
+    try {
+        // Tenta fazer uma query simples no banco de dados para verificar a conexão
+        await prisma.$queryRaw`SELECT 1`;
+        res.status(200).json({
+            status: 'ok',
+            message: 'API e conexão com o banco de dados estão funcionando.',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Health check falhou:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'API está funcionando, mas a conexão com o banco de dados falhou.',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
-// Endpoint de Ping
-// Um endpoint simples para verificar conectividade.
-app.get('/ping', (req, res) => {
-  console.log('✅ PING RECEBIDO (Endpoint /ping)!');
-  res.status(200).send('pong');
-});
-
-// Rota base da API
-app.get('/', (req, res) => {
-  console.log('🏠 Requisição recebida na URL base (/)!');
-  res.status(200).json({
-    message: 'Bem-vindo à MILES DEAL API!',
-    version: '1.0.0',
-    status: 'Online',
-    port: PORT,
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
-// Middleware para lidar com rotas não encontradas (404)
+// Tratamento de rotas não encontradas
 app.use((req, res, next) => {
-  console.warn(`⚠️ Rota não encontrada: ${req.method} ${req.url}`);
-  res.status(404).json({
-    error: 'Not Found',
-    message: `A rota ${req.originalUrl} não foi encontrada neste servidor.`
-  });
+    res.status(404).json({ message: 'Rota não encontrada.' });
 });
 
-// Middleware de tratamento de erros global
+// Tratamento de erros gerais
 app.use((err, req, res, next) => {
-  console.error('❌ Erro interno do servidor:', err.stack);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: 'Ocorreu um erro inesperado no servidor.',
-    details: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
+    console.error(err.stack);
+    res.status(500).json({ message: 'Algo deu errado no servidor!' });
 });
 
 // Inicia o servidor
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log('\n🚀 MILES DEAL API - FRESH START');
-  console.log(`📍 PORT: ${PORT}`);
-  console.log(`📍 ENV PORT: ${process.env.PORT || 'Não definida (usando padrão)'}`);
-  console.log('🔍 Verificando se porta está livre...');
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log('✅ Host: 0.0.0.0 - todas as interfaces');
-  console.log('✅ PID:', process.pid);
-  console.log('✅ Porta livre e funcionando!');
-  console.log('--- Servidor pronto para receber requisições ---');
+app.listen(PORT, () => {
+    console.log('🚀 MILES DEAL API - FRESH START');
+    console.log(`📍 PORT: ${PORT}`);
+    console.log(`📍 ENV PORT: ${process.env.PORT ? 'Definida' : 'Não definida (usando padrão)'}`);
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`--- Servidor pronto para receber requisições ---`);
 });
 
-// Lidar com erros do servidor (ex: porta já em uso)
-server.on('error', (error) => {
-  if (error.code === 'EADDRINUSE') {
-    console.error(`❌ Erro: A porta ${PORT} já está em uso.`);
-    console.error('Por favor, libere a porta ou configure outra.');
-  } else {
-    console.error('❌ Erro inesperado no servidor:', error);
-  }
-  process.exit(1); // Encerra o processo com erro
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+    console.log('SIGTERM signal recebido: Encerrando o servidor...');
+    await prisma.$disconnect(); // Desconecta o Prisma do banco de dados
+    server.close(() => {
+        console.log('Servidor HTTP encerrado.');
+        process.exit(0);
+    });
 });
 
-// Tratamento de SIGTERM para encerramento gracioso (Graceful Shutdown)
-// Isso é o que o EasyPanel/Docker envia para parar a aplicação.
-process.on('SIGTERM', () => {
-  console.log('🔄 SIGTERM recebido - fechando servidor graciosamente');
-  server.close(() => {
-    console.log('✅ Servidor fechado');
-    process.exit(0); // Encerra o processo sem erro
-  });
-});
-
-// Tratamento de SIGINT (Ctrl+C) para encerramento gracioso
-process.on('SIGINT', () => {
-  console.log('👋 SIGINT recebido (Ctrl+C) - fechando servidor graciosamente');
-  server.close(() => {
-    console.log('✅ Servidor fechado');
-    process.exit(0);
-  });
-});
-
-// Captura de exceções não tratadas para evitar que o processo caia
-process.on('uncaughtException', (err) => {
-  console.error('💥 Exceção não tratada:', err.message);
-  console.error(err.stack);
-  // Opcional: Encerre o processo após logar para evitar estados inconsistentes
-  // process.exit(1); 
-});
-
-// Captura de rejeições de Promise não tratadas
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('🚨 Rejeição de Promise não tratada:', reason);
-  console.error('Promise:', promise);
-  // Opcional: Encerre o processo após logar
-  // process.exit(1);
+process.on('SIGINT', async () => {
+    console.log('SIGINT signal recebido: Encerrando o servidor...');
+    await prisma.$disconnect(); // Desconecta o Prisma do banco de dados
+    server.close(() => {
+        console.log('Servidor HTTP encerrado.');
+        process.exit(0);
+    });
 });
