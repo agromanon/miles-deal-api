@@ -1,14 +1,15 @@
 const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 3000; // ← PORTA 3000
+const PORT = process.env.PORT || 5000; // ← PORTA 5000
 
 console.log('🚀 MILES DEAL API - FRESH START');
 console.log('📍 PORT:', PORT);
 console.log('📍 ENV PORT:', process.env.PORT);
+console.log('🔍 Verificando se porta está livre...');
 
 app.use(express.json());
 
-// HEALTH CHECKS ROBUSTOS
+// HEALTH CHECKS
 app.get('/health', (req, res) => {
   console.log('🔍 Health check acessado');
   res.status(200).json({ 
@@ -49,6 +50,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log('✅ Host: 0.0.0.0 - todas as interfaces');
   console.log('✅ PID:', process.pid);
+  console.log('✅ Porta livre e funcionando!');
 });
 
 // TRATAMENTO DE SINAIS
