@@ -49,18 +49,18 @@ app.post('/api/flights/bulk', async (req, res) => {
 
         const flightsToCreate = flightsData.map(flight => ({
             airline: flight.airline,
-            milesProgram: flight.milesProgram, // Adicionado conforme schema
-            originCity: flight.originCity, // Adicionado conforme schema
-            destinationCity: flight.destinationCity, // Adicionado conforme schema
-            destinationCountry: flight.destinationCountry, // Adicionado conforme schema
-            destinationContinent: flight.destinationContinent, // Adicionado conforme schema
-            milesPrice: parseInt(flight.milesPrice, 10), // Usar milesPrice e garantir que é int
-            taxesFees: parseFloat(flight.taxesFees), // Usar taxesFees e garantir que é float
-            flightDate: new Date(flight.flightDate),
+            milesProgram: flight.milesProgram, // Corrigido conforme schema
+            originCity: flight.originCity, // Corrigido conforme schema
+            destinationCity: flight.destinationCity, // Corrigido conforme schema
+            destinationCountry: flight.destinationCountry, // Corrigido conforme schema
+            destinationContinent: flight.destinationContinent, // Corrigido conforme schema
+            milesPrice: parseInt(flight.milesPrice, 10), // Corrigido conforme schema e garantir que é int
+            taxesFees: parseFloat(flight.taxesFees), // Corrigido conforme schema e garantir que é float
+            flightDate: new Date(flight.flightDate), // Corrigido conforme schema
             returnDate: flight.returnDate ? new Date(flight.returnDate) : null,
-            flightClass: flight.flightClass, // Adicionado conforme schema
-            availability: parseInt(flight.availability, 10), // Adicionado conforme schema
-            isDomestic: flight.isDomestic, // Adicionado conforme schema
+            flightClass: flight.flightClass, // Corrigido conforme schema
+            availability: parseInt(flight.availability, 10), // Corrigido conforme schema e garantir que é int
+            isDomestic: flight.isDomestic, // Corrigido conforme schema
             dealScore: calculateDealScore(flight), // Calcula o dealScore
             scrapedAt: new Date(),
         }));
