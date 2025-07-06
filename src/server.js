@@ -7,7 +7,8 @@ app.disable('etag');
 
 const PORT = process.env.PORT || 3000;
 
-console.log('🚀 MILES DEAL API - ROTAS ORIGINAIS');
+console.log('🚀 MILES DEAL API - ROTAS ORIGINAIS - DEBUG');
+console.log('📊 DATABASE_URL:', process.env.DATABASE_URL ? 'CONFIGURADO' : 'NÃO CONFIGURADO');
 
 app.use(express.json());
 
@@ -19,25 +20,48 @@ app.use((req, res, next) => {
     'Expires': '0',
     'X-Timestamp': Date.now().toString()
   });
-  console.log(`📡 REQUEST: ${req.method} ${req.url}`);
+  console.log(`📡 REQUEST: ${req.method} ${req.url} - ${new Date().toISOString()}`);
   next();
 });
 
 // ROTA RAIZ - HOME
 app.get('/', (req, res) => {
   console.log('✅ Rota raiz executada');
-  res.json({
-    message: 'Miles Deal API',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-    endpoints: {
-      home: '/',
-      setup: '/setup',
-      health: '/health',
-      flights: '/flights',
-      search: '/search'
-    }
-  });
+  try {
+    res.json({
+      message: 'Miles Deal API',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      database_status: process.env.DATABASE_URL ? 'configured' : 'not_configured',
+      endpoints: {
+        home: '/',
+        setup: '/setup',
+        health: '/health',
+        flights: '/flights',
+        search: '/search'
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erro na rota raiz:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// HEALTH - Status da API
+app.get('/health', (req, res) => {
+  console.log('✅ Health check executado');
+  try {
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      message: 'API funcionando!',
+      database: process.env.DATABASE_URL ? 'configured' : 'not_configured',
+      version: '1.0.0'
+    });
+  } catch (error) {
+    console.error('❌ Erro no health:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // SETUP - Configuração do banco
@@ -45,12 +69,22 @@ app.get('/setup', async (req, res) => {
   console.log('✅ Setup executado');
   
   try {
+    if (!process.env.DATABASE_URL) {
+      console.log('❌ DATABASE_URL não configurado');
+      return res.status(500).json({
+        success: false,
+        error: 'DATABASE_URL not configured',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    console.log('🔌 Tentando conectar ao banco...');
     const client = new Client({
       connectionString: process.env.DATABASE_URL
     });
     
     await client.connect();
-    console.log('🔌 Conectado ao banco');
+    console.log('✅ Conectado ao banco');
     
     const createTableQuery = `
       CREATE TABLE IF NOT EXISTS flights (
@@ -76,6 +110,7 @@ app.get('/setup', async (req, res) => {
     console.log('✅ Tabela flights criada');
     
     await client.end();
+    console.log('✅ Conexão fechada');
     
     res.json({
       success: true,
@@ -94,29 +129,30 @@ app.get('/setup', async (req, res) => {
   }
 });
 
-// HEALTH - Status da API
-app.get('/health', (req, res) => {
-  console.log('✅ Health check executado');
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    message: 'API funcionando!',
-    database: process.env.DATABASE_URL ? 'configured' : 'not_configured'
-  });
-});
-
 // FLIGHTS - Listar voos
 app.get('/flights', async (req, res) => {
   console.log('✅ Flights executado');
   
   try {
+    if (!process.env.DATABASE_URL) {
+      console.log('❌ DATABASE_URL não configurado');
+      return res.status(500).json({
+        success: false,
+        error: 'DATABASE_URL not configured',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    console.log('🔌 Conectando ao banco para listar voos...');
     const client = new Client({
       connectionString: process.env.DATABASE_URL
     });
     
     await client.connect();
+    console.log('✅ Conectado - executando query...');
     
     const result = await client.query('SELECT * FROM flights ORDER BY created_at DESC LIMIT 20');
+    console.log(`✅ Query executada - ${result.rowCount} resultados`);
     
     await client.end();
     
@@ -142,60 +178,15 @@ app.get('/flights', async (req, res) => {
 app.get('/search', async (req, res) => {
   console.log('✅ Search executado');
   
-  const { origin, destination, max_miles, min_miles } = req.query;
-  
   try {
-    const client = new Client({
-      connectionString: process.env.DATABASE_URL
-    });
-    
-    await client.connect();
-    
-    let query = 'SELECT * FROM flights WHERE 1=1';
-    const params = [];
-    let paramCount = 0;
-    
-    if (origin) {
-      paramCount++;
-      query += ` AND origin_city ILIKE $${paramCount}`;
-      params.push(`%${origin}%`);
-    }
-    
-    if (destination) {
-      paramCount++;
-      query += ` AND destination_city ILIKE $${paramCount}`;
-      params.push(`%${destination}%`);
-    }
-    
-    if (max_miles) {
-      paramCount++;
-      query += ` AND miles_price <= $${paramCount}`;
-      params.push(parseInt(max_miles));
-    }
-    
-    if (min_miles) {
-      paramCount++;
-      query += ` AND miles_price >= $${paramCount}`;
-      params.push(parseInt(min_miles));
-    }
-    
-    query += ' ORDER BY created_at DESC LIMIT 20';
-    
-    const result = await client.query(query, params);
-    
-    await client.end();
-    
     res.json({
       success: true,
-      message: 'Search completed successfully!',
+      message: 'Search endpoint working!',
       timestamp: new Date().toISOString(),
-      filters: { origin, destination, max_miles, min_miles },
-      total_results: result.rowCount,
-      flights: result.rows
+      note: 'Full search functionality will be implemented after basic routes are working'
     });
-    
   } catch (error) {
-    console.error('❌ Erro na busca:', error);
+    console.error('❌ Erro no search:', error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -204,63 +195,13 @@ app.get('/search', async (req, res) => {
   }
 });
 
-// ADD FLIGHT - Adicionar voo
-app.post('/flights', async (req, res) => {
-  console.log('✅ Add flight executado');
-  
-  try {
-    const flightData = req.body;
-    
-    const client = new Client({
-      connectionString: process.env.DATABASE_URL
-    });
-    
-    await client.connect();
-    
-    const insertQuery = `
-      INSERT INTO flights (
-        airline, miles_program, origin_city, destination_city, 
-        destination_country, destination_continent, miles_price, 
-        taxes_fees, flight_date, flight_class, availability, is_domestic
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      RETURNING id;
-    `;
-    
-    const values = [
-      flightData.airline,
-      flightData.miles_program,
-      flightData.origin_city,
-      flightData.destination_city,
-      flightData.destination_country,
-      flightData.destination_continent,
-      flightData.miles_price,
-      flightData.taxes_fees,
-      flightData.flight_date,
-      flightData.flight_class,
-      flightData.availability,
-      flightData.is_domestic
-    ];
-    
-    const result = await client.query(insertQuery, values);
-    
-    await client.end();
-    
-    res.json({
-      success: true,
-      message: 'Flight added successfully!',
-      timestamp: new Date().toISOString(),
-      flight_id: result.rows[0].id,
-      data: flightData
-    });
-    
-  } catch (error) {
-    console.error('❌ Erro ao adicionar voo:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
+// Capturar erros não tratados
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 process.on('SIGTERM', () => {
@@ -270,14 +211,13 @@ process.on('SIGTERM', () => {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
   console.log(`🚀 MILES DEAL API - PORTA ${PORT}`);
-  console.log('🗃️ Banco de dados configurado');
+  console.log('🗃️ DATABASE_URL:', process.env.DATABASE_URL ? 'CONFIGURADO' : 'NÃO CONFIGURADO');
   console.log('🚫 Cache desabilitado');
-  console.log('📊 Rotas originais:');
+  console.log('📊 Rotas originais com debug:');
   console.log('  - GET / (home)');
   console.log('  - GET /setup (criar tabelas)');
   console.log('  - GET /health (status)');
   console.log('  - GET /flights (listar voos)');
   console.log('  - GET /search (buscar voos)');
-  console.log('  - POST /flights (adicionar voo)');
   console.log('=================================');
 });
