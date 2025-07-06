@@ -28,16 +28,11 @@ app.get('/health', (req, res) => {
   });
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log('✅ Database configurado:', process.env.DATABASE_URL ? 'SIM' : 'NÃO');
+  console.log('✅ Servidor estável - sem graceful shutdown');
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('🔴 SIGTERM recebido - encerrando graciosamente');
-  server.close(() => {
-    console.log('🔴 Servidor encerrado');
-    process.exit(0);
-  });
-});
+// REMOVER GRACEFUL SHUTDOWN TEMPORARIAMENTE
+console.log('⚠️ Graceful shutdown desabilitado para teste');
